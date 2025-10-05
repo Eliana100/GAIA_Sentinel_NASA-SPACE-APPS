@@ -1,179 +1,214 @@
-# CUMARU - Urban Risk Monitoring System
+Getting Started
+Prerequisites
 
-The CUMARU project is a full-stack prototype demonstrating a comprehensive urban risk monitoring and alert system (for events like floods and landslides). It utilizes Earth observation data with a **demonstration of integration with real NASA APIs**. It offers an interactive frontend with a map, a robust backend with an API, and an alert engine, all orchestrated via Docker.
+Before starting, make sure you have the following installed:
 
-## Architecture Overview
+Docker Desktop: To containerize and run the application.
 
-The system is divided into layers:
+Git: To clone the repository.
 
-1.  **Data Sources (NASA Integration / Simulated)**: The backend includes a `nasa_integrator` layer that demonstrates how to fetch data from real NASA APIs (GPM, MODIS, SMAP, SRTM). For the prototype, the processing of this raw data into `tile_features` is simulated via `data_simulator.py`.
-2.  **Ingest Layer (Demonstrative)**: The `fetch_nasa_data_real` function in the backend simulates the call and consumption of data from NASA APIs.
-3.  **Processing Layer (Alert Engine)**: The alert engine in the backend processes `tile_features` (whether simulated or derived from NASA data), applies heuristic rules, and generates alerts.
-4.  **Feature Store / DB**: SQLite (`data/cumaru.db`) for persisting tiles, features, and alerts.
-5.  **API Layer**: FastAPI backend exposing endpoints for the frontend and other services.
-6.  **Dashboard (Frontend)**: React application with Mapbox GL JS for map and alert visualization.
-7.  **Notification Layer (Simulated)**: Webhook endpoints for municipalities.
+(Optional for direct development): Node.js (v18+) and npm/yarn, Python (v3.9+) and pip, VS Code.
 
-## Technologies Used
+Local Run
 
-*   **Frontend**: React (Vite), Mapbox GL JS, Tailwind CSS
-*   **Backend**: Python (FastAPI), SQLite, Pydantic, SQLAlchemy, `httpx` (for external calls)
-*   **Orchestration**: Docker, Docker Compose
-*   **Design**: Figma (mockups and JSON structure)
+Clone the Repository:
 
-## Requirements
+git clone https://github.com/your-username/cumaru.git
+cd cumaru
 
-*   Docker and Docker Compose
-*   Node.js and npm (for frontend development outside Docker, optional)
-*   Python and pip (for backend development outside Docker, optional)
 
-## Local Execution (with Docker)
+Create the .env file:
+Copy the example environment variables and fill them in.
 
-1.  **Clone the Repository:**
-    ```bash
-    git clone https://github.com/your-username/cumaru.git
-    cd cumaru
-    ```
+cp .env.example .env
+# Open .env and add your values, for example MAPBOX_TOKEN, NASA_USER, etc.
 
-2.  **Configure Environment Variables:**
-    Create `.env` files in `frontend/` and `backend/` based on the provided examples:
 
-    `frontend/.env` (or `frontend/.env.local` for Vite):
-    ```
-    VITE_MAPBOX_TOKEN=YOUR_MAPBOX_ACCESS_TOKEN  # Generate a token at mapbox.com
-    VITE_BACKEND_URL=http://localhost:8000
-    ```
-    `backend/.env`:
-    ```
-    DATABASE_URL=sqlite:///./data/cumaru.db
-    NASA_EARTHDATA_USERNAME=YOUR_EARTHDATA_USERNAME # Create one at urs.earthdata.nasa.gov
-    NASA_EARTHDATA_PASSWORD=YOUR_EARTHDATA_PASSWORD # Required to access some NASA APIs
-    TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxx # Placeholder
-    TWILIO_AUTH_TOKEN=your_auth_token # Placeholder
-    TWILIO_PHONE_NUMBER=+15017122661 # Placeholder
-    ```
+Note: For this prototype, many NASA/Twilio/Firebase variables can remain as placeholders.
 
-    **Important**:
-    *   Replace `YOUR_MAPBOX_ACCESS_TOKEN` with your actual Mapbox token.
-    *   For real NASA integration, you'll need an Earthdata Login account (`NASA_EARTHDATA_USERNAME` and `NASA_EARTHDATA_PASSWORD`). The backend is already configured to include these authentication headers in the simulated call.
+Build and Run with Docker Compose:
 
-3.  **Build and Start Docker Containers:**
-    ```bash
-    docker-compose up --build -d
-    ```
-    This will build the frontend and backend images, create the SQLite database, and start the services.
+docker-compose up --build
 
-4.  **Initialize Data (Optional, but Recommended):**
-    To populate the database with simulated data and generate initial alerts, execute the scripts inside the backend container:
-    ```bash
-    docker-compose exec backend python -c "from backend.database import init_db; init_db()"
-    docker-compose exec backend python backend/data_simulator.py
-    docker-compose exec backend python backend/alert_engine.py --run-once
-    ```
-    The `alert_engine.py` can be set up as a cron job in a production environment, but for the prototype, we run it manually to populate data.
 
-5.  **Access the Application:**
-    Open your browser and navigate to `http://localhost:5173` (or the port Vite uses, which can be checked in Docker logs).
+This command will:
 
-## API Endpoints (FastAPI Backend)
+Build the Docker images for the frontend and backend.
 
-The backend API is available at `http://localhost:8000`.
+Start the frontend service (React app) at http://localhost:80.
 
-*   **GET /api/tiles?bbox=[min_lon,min_lat,max_lon,max_lat]&zoom=[zoom_level]**
-    *   Returns a list of tiles with `risk_score` and metadata within the specified bounding box and zoom level.
-    *   Example return payload:
-        ```json
-        [
-          {
-            "tile_id": "h3_8a12b...",
-            "lat": -23.55,
-            "lon": -46.63,
-            "risk_score": 75,
-            "type": "flood",
-            "timestamp": "2023-10-27T10:00:00Z",
-            "popup_info": "High Risk: Flood in the central region. 24h Rain: 60mm."
-          }
-        ]
-        ```
+Start the backend service (FastAPI app) at http://localhost:8000.
 
-*   **GET /api/alerts/active**
-    *   Returns a list of active alerts in the system.
-    *   Example return payload (details in `alert_payload_examples.json`):
-        ```json
-        [
-          {
-            "alert_id": "A20251005-0001",
-            "tile_id": "h3_8a12b...",
-            "type": "flood",
-            "score": 82,
-            "confidence": 0.72,
-            "status": "active",
-            "created_at": "2025-10-05T14:30:00Z",
-            "location_info": {
-              "city": "São Paulo",
-              "tile_description": "North Zone"
-            },
-            "recommendations": ["Evacuate riverside areas", "Avoid basements"],
-            "evidence": {
-              "rain_24h": 62,
-              "soil_moisture": 86,
-              "ndvi": 0.12,
-              "chart_data": {
-                "rain_48h": [
-                  { "hour": "-48h", "value": 10 },
-                  { "hour": "-24h", "value": 20 },
-                  { "hour": "now", "value": 62 }
-                ]
-              }
-            }
-          }
-        ]
-        ```
+Initialize the SQLite database (data/cumaru.db).
 
-*   **POST /api/ingest/nasa-data?start=...&end=...&product=gpm**
-    *   **Real NASA Integration Demonstration**: This endpoint simulates calling a real NASA API to fetch Earth observation data.
-    *   **Authentication**: Uses `NASA_EARTHDATA_USERNAME` and `NASA_EARTHDATA_PASSWORD` environment variables to simulate authentication.
-    *   **Parameters**: `start` (ISO format date-time), `end` (ISO format date-time), `product` (gpm, modis, smap, srtm - to simulate different endpoints).
-    *   For the prototype, the response is still simulated data, but the request structure for NASA is realistic.
-    *   Example curl:
-        ```bash
-        curl -X POST "http://localhost:8000/api/ingest/nasa-data?start=2023-10-26T00:00:00Z&end=2023-10-27T00:00:00Z&product=gpm" -H "Authorization: Basic $(echo -n 'YOUR_EARTHDATA_USERNAME:YOUR_EARTHDATA_PASSWORD' | base64)"
-        ```
-    *   Returns: `{"message": "NASA data (simulated for prototype) processed for: gpm", "data": {...}}`
+Access the Application:
+Open your web browser and navigate to http://localhost:80.
 
-*   **POST /api/ingest/crowd-report**
-    *   Accepts crowd-sourced reports (simulated).
-    *   Method: `POST`
-    *   JSON Payload:
-        ```json
-        {
-          "user_id": "user123",
-          "lat": -23.5505,
-          "lon": -46.6333,
-          "type": "flood",
-          "photo_url": "http://example.com/photo.jpg",
-          "description": "Street flooded near the station."
-        }
-        ```
-    *   Returns: `{"message": "Crowd report received.", "report_id": "..."}`
+4. Environment Variables
 
-*   **POST /api/webhook/municipality**
-    *   Endpoint to receive acknowledgment/response webhooks from municipalities.
-    *   Method: `POST`
-    *   JSON Payload (example):
-        ```json
-        {
-          "alert_id": "A20251005-0001",
-          "status": "acknowledged",
-          "message": "São Paulo Civil Defense acknowledged and taking action."
-        }
-        ```
-    *   Returns: `{"message": "Municipal webhook received and processed."}`
+The following environment variables are used. You will need to create a .env file in the root directory (and potentially backend/.env) with these values.
 
-## Data Simulation
+Variable Name	Description	Default (Prototype)
+MAPBOX_TOKEN	Your Mapbox public access token (for Frontend)	pk.eyJ...
+NASA_USER	NASA Earthdata login username	YOUR_NASA_USERNAME
+NASA_PASS	NASA Earthdata login password	YOUR_NASA_PASSWORD
+NASA_API_BASE_URL	Base URL for NASA Earthdata APIs (e.g., GPM, SMAP)	https://example.nasa.api
+TWILIO_ACCOUNT_SID	Twilio Account SID (for SMS)	ACxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN	Twilio authentication token	your_auth_token
+FIREBASE_API_KEY	Firebase API key (for Push Notifications)	AIz...
+DATABASE_FILE	Path to the SQLite database file	data/cumaru.db
+CORS_ORIGINS	Comma-separated list of allowed CORS origins	http://localhost:80,http://localhost:5173
+5. API Endpoints
 
-The `scripts/generate_synthetic_data.py` script generates synthetic time series data for rain, soil moisture, and NDVI for tiles in example cities (São Paulo, Dhaka, Medellín). This data is used by `data_simulator.py` in the backend to populate the database with `tile_features`, which the `alert_engine` then processes. This step is crucial for the prototype's functionality, **even with the demonstrative NASA integration**, as the transformation from raw NASA data to `tile_features` format is complex and outside the scope of this initial prototype.
+The FastAPI backend provides the following endpoints:
 
-To generate synthetic data:
-```bash
-python scripts/generate_synthetic_data.py
+Base URL: http://localhost:8000
+
+Tiles and Map Data
+
+GET /api/tiles?bbox=...&zoom=...&time_range=...
+
+Description: Returns map tiles with associated risk scores and the most recent resource data within a bounding box and specified zoom level. Triggers a simulated run of the alert engine for dynamic data.
+
+Parameters:
+
+bbox (string, required): Comma-separated string of coordinates west,south,east,north.
+
+zoom (int, required): Map zoom level.
+
+time_range (int, optional): Time range for data aggregation in hours (default: 24).
+
+Example Response:
+
+{
+  "tiles": [
+    {
+      "tile_id": "tile_h3_8a12b0000000000",
+      "h3_index": "h3_8a12b0000000000",
+      "geom": "POINT(-46.63 -23.55)",
+      "ts": "2023-10-27T10:30:00",
+      "rain_24h": 65.2,
+      "soil_moisture": 88.5,
+      "score": 85,
+      "type": "flood",
+      "status": "active",
+      "center_coords": {"lat": -23.55, "lon": -46.63}
+    }
+  ]
+}
+
+Alerts
+
+GET /api/alerts/active?city=...&alert_type=...
+
+Description: Lists all active alerts, with optional filtering by city and alert type. Triggers a simulated run of the alert engine.
+
+Parameters:
+
+city (string, optional): Filter by city name.
+
+`alert
+
+7. Alert Engine Thresholds and Rules
+
+Here are example heuristic-based rules and thresholds used in the Alert Engine:
+
+ALERT_THRESHOLD: 75 (Overall risk score required to trigger an alert).
+
+CONFIDENCE_THRESHOLD: 0.6 (Minimum confidence level for an alert).
+
+Flood Alert:
+
+if rain_24h >= 50mm AND soil_moisture >= 75% => score += 30
+
+if NDVI < 0.2 (low vegetation) => score += 10
+
+Landslide Alert:
+
+if slope > 20 degrees AND soil_moisture > 80% AND rain_48h > 70mm => score += 40
+
+Prioritization:
+
+final_score = base_score * (1 + (population_exposed / 100000)) (alerts in densely populated areas get higher priority).
+
+Deduplication:
+
+Alerts of the same type within 500 meters and 1 hour are grouped.
+
+Rate limit: Maximum 1 alert / 10 min per user for push notifications.
+
+Escalation: (Simulated) If an alert persists and confidence increases, trigger an escalation webhook.
+
+8. Database Schema (SQLite: data/cumaru.db)
+CREATE TABLE IF NOT EXISTS tiles (
+    tile_id TEXT PRIMARY KEY,
+    h3_index TEXT,
+    geom TEXT,           -- Stores as GeoJSON string (e.g., POINT(-X -Y))
+    meta_fields TEXT     -- Stores metadata as JSON string
+);
+
+CREATE TABLE IF NOT EXISTS tile_features (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tile_id TEXT NOT NULL,
+    ts DATETIME NOT NULL,
+    rain_1h REAL,
+    rain_24h REAL,
+    soil_moisture REAL,
+    ndvi REAL,
+    slope REAL,
+    FOREIGN KEY (tile_id) REFERENCES tiles(tile_id)
+);
+
+CREATE TABLE IF NOT EXISTS alerts (
+    alert_id TEXT PRIMARY KEY,
+    tile_id TEXT NOT NULL,
+    type TEXT NOT NULL,        -- e.g., 'flood', 'landslide', 'wildfire'
+    score INTEGER NOT NULL,
+    confidence REAL NOT NULL,
+    status TEXT NOT NULL,      -- 'pending', 'active', 'resolved', 'false_positive'
+    created_at DATETIME NOT NULL,
+    resolved_at DATETIME,
+    payload TEXT,              -- Stores AlertPayload JSON as string
+    FOREIGN KEY (tile_id) REFERENCES tiles(tile_id)
+);
+
+CREATE TABLE IF NOT EXISTS crowd_reports (
+    report_id TEXT PRIMARY KEY,
+    user_id TEXT,
+    lat REAL,
+    lon REAL,
+    type TEXT,                 -- e.g., 'flood', 'landslide', 'debris'
+    photo_url TEXT,
+    ts DATETIME,
+    validated BOOLEAN          -- True if validated by civil defense
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    user_id TEXT PRIMARY KEY,
+    phone TEXT,
+    email TEXT,
+    prefs TEXT,                -- JSON string for user preferences (e.g., monitored areas)
+    location_geom TEXT         -- GeoJSON string for the user's primary location
+);
+
+CREATE TABLE IF NOT EXISTS organizations (
+    org_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    webhook_url TEXT           -- URL to receive alert notifications
+);
+
+9. Figma Mockups
+
+These images represent the central design of the CUMARU dashboard at different zoom levels. You can find the high-quality PNGs in the .figma/mockups directory.
+
+Global View (Central 3D globe with colored access points)
+<img width="1024" height="1024" alt="Generated Image October 05, 2025 - 4_57PM (2)" src="https://github.com/user-attachments/assets/cca1c3b3-b6f2-4cff-8bc6-2a1e38aa1a1e" />
+
+Country view (Brazil) (2D flat map with heat map divided by states/regions)
+<img width="1024" height="1024" alt="Generated Image October 05, 2025 - 4_57PM (3)" src="https://github.com/user-attachments/assets/449935ba-dc3c-4f11-81d4-eda4f93834dc" />
+
+State/Municipal View (São Paulo) (View closer to the map with alert pins and highlighted high-risk areas)
+<img width="1024" height="1024" alt="Generated Image October 05, 2025 - 4_57PM (1)" src="https://github.com/user-attachments/assets/07851768-1dd5-428e-9a4b-fbb534a94d59" />
+
+Neighborhood/zone view (example in São Paulo) (Ultra-detailed map with interactive layers)
+<img width="1024" height="1024" alt="Generated Image October 05, 2025 - 4_57PM" src="https://github.com/user-attachments/assets/ba71417d-efb1-4964-845c-6a11787dcd63" />
