@@ -1,87 +1,87 @@
-# CUMARU - Sistema de Monitoramento de Riscos Urbanos
+# CUMARU - Urban Risk Monitoring System
 
-O CUMARU é um protótipo full-stack que demonstra um sistema completo de monitoramento e alerta de riscos urbanos (como enchentes e deslizamentos) utilizando dados de observação da Terra **com uma demonstração de integração com APIs reais da NASA**. Ele oferece um frontend interativo com mapa, um backend robusto com API e um motor de alertas, tudo orquestrado via Docker.
+The CUMARU project is a full-stack prototype demonstrating a comprehensive urban risk monitoring and alert system (for events like floods and landslides). It utilizes Earth observation data with a **demonstration of integration with real NASA APIs**. It offers an interactive frontend with a map, a robust backend with an API, and an alert engine, all orchestrated via Docker.
 
-## Visão Geral da Arquitetura
+## Architecture Overview
 
-O sistema é dividido em camadas:
+The system is divided into layers:
 
-1.  **Data Sources (NASA Integration / Simulada)**: O backend inclui uma camada `nasa_integrator` que demonstra como buscar dados de APIs da NASA (GPM, MODIS, SMAP, SRTM). Para o protótipo, o processamento desses dados brutos para `tile_features` é simulado via `data_simulator.py`.
-2.  **Ingest Layer (Demonstrativa)**: A função `fetch_nasa_data_real` no backend simula a chamada e o consumo de dados das APIs da NASA.
-3.  **Processing Layer (Alert Engine)**: O motor de alertas no backend processa os `tile_features` (sejam eles simulados ou derivados de dados NASA), aplica regras heurísticas e gera alertas.
-4.  **Feature Store / DB**: SQLite (`data/cumaru.db`) para persistir tiles, feições e alertas.
-5.  **API Layer**: Backend FastAPI que expõe endpoints para o frontend e outros serviços.
-6.  **Dashboard (Frontend)**: Aplicação React com Mapbox GL JS para visualização de mapa e alertas.
-7.  **Notification Layer (Simulada)**: Endpoints de webhook para municípios.
+1.  **Data Sources (NASA Integration / Simulated)**: The backend includes a `nasa_integrator` layer that demonstrates how to fetch data from real NASA APIs (GPM, MODIS, SMAP, SRTM). For the prototype, the processing of this raw data into `tile_features` is simulated via `data_simulator.py`.
+2.  **Ingest Layer (Demonstrative)**: The `fetch_nasa_data_real` function in the backend simulates the call and consumption of data from NASA APIs.
+3.  **Processing Layer (Alert Engine)**: The alert engine in the backend processes `tile_features` (whether simulated or derived from NASA data), applies heuristic rules, and generates alerts.
+4.  **Feature Store / DB**: SQLite (`data/cumaru.db`) for persisting tiles, features, and alerts.
+5.  **API Layer**: FastAPI backend exposing endpoints for the frontend and other services.
+6.  **Dashboard (Frontend)**: React application with Mapbox GL JS for map and alert visualization.
+7.  **Notification Layer (Simulated)**: Webhook endpoints for municipalities.
 
-## Tecnologias Utilizadas
+## Technologies Used
 
 *   **Frontend**: React (Vite), Mapbox GL JS, Tailwind CSS
-*   **Backend**: Python (FastAPI), SQLite, Pydantic, SQLAlchemy, `httpx` (para chamadas externas)
-*   **Orquestração**: Docker, Docker Compose
-*   **Design**: Figma (mockups e JSON de estrutura)
+*   **Backend**: Python (FastAPI), SQLite, Pydantic, SQLAlchemy, `httpx` (for external calls)
+*   **Orchestration**: Docker, Docker Compose
+*   **Design**: Figma (mockups and JSON structure)
 
-## Requisitos
+## Requirements
 
-*   Docker e Docker Compose
-*   Node.js e npm (para desenvolvimento frontend fora do Docker, opcional)
-*   Python e pip (para desenvolvimento backend fora do Docker, opcional)
+*   Docker and Docker Compose
+*   Node.js and npm (for frontend development outside Docker, optional)
+*   Python and pip (for backend development outside Docker, optional)
 
-## Execução Local (com Docker)
+## Local Execution (with Docker)
 
-1.  **Clone o Repositório:**
+1.  **Clone the Repository:**
     ```bash
-    git clone https://github.com/seu-usuario/cumaru.git
+    git clone https://github.com/your-username/cumaru.git
     cd cumaru
     ```
 
-2.  **Configurar Variáveis de Ambiente:**
-    Crie os arquivos `.env` em `frontend/` e `backend/` com base nos exemplos fornecidos:
+2.  **Configure Environment Variables:**
+    Create `.env` files in `frontend/` and `backend/` based on the provided examples:
 
-    `frontend/.env` (ou `frontend/.env.local` para Vite):
+    `frontend/.env` (or `frontend/.env.local` for Vite):
     ```
-    VITE_MAPBOX_TOKEN=SEU_MAPBOX_ACCESS_TOKEN  # Gere um token em mapbox.com
+    VITE_MAPBOX_TOKEN=YOUR_MAPBOX_ACCESS_TOKEN  # Generate a token at mapbox.com
     VITE_BACKEND_URL=http://localhost:8000
     ```
     `backend/.env`:
     ```
     DATABASE_URL=sqlite:///./data/cumaru.db
-    NASA_EARTHDATA_USERNAME=SEU_USUARIO_EARTHDATA # Crie um em urs.earthdata.nasa.gov
-    NASA_EARTHDATA_PASSWORD=SUA_SENHA_EARTHDATA # Necessário para acessar algumas APIs da NASA
+    NASA_EARTHDATA_USERNAME=YOUR_EARTHDATA_USERNAME # Create one at urs.earthdata.nasa.gov
+    NASA_EARTHDATA_PASSWORD=YOUR_EARTHDATA_PASSWORD # Required to access some NASA APIs
     TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxx # Placeholder
     TWILIO_AUTH_TOKEN=your_auth_token # Placeholder
     TWILIO_PHONE_NUMBER=+15017122661 # Placeholder
     ```
 
-    **Importante**:
-    *   Substitua `SEU_MAPBOX_ACCESS_TOKEN` pelo seu token real do Mapbox.
-    *   Para a integração real da NASA funcionar, você precisará de uma conta Earthdata Login (`NASA_EARTHDATA_USERNAME` e `NASA_EARTHDATA_PASSWORD`). O backend já está configurado para incluir esses headers de autenticação na chamada simulada.
+    **Important**:
+    *   Replace `YOUR_MAPBOX_ACCESS_TOKEN` with your actual Mapbox token.
+    *   For real NASA integration, you'll need an Earthdata Login account (`NASA_EARTHDATA_USERNAME` and `NASA_EARTHDATA_PASSWORD`). The backend is already configured to include these authentication headers in the simulated call.
 
-3.  **Construir e Iniciar os Contêineres Docker:**
+3.  **Build and Start Docker Containers:**
     ```bash
     docker-compose up --build -d
     ```
-    Isso irá construir as imagens do frontend e backend, criar o banco de dados SQLite e iniciar os serviços.
+    This will build the frontend and backend images, create the SQLite database, and start the services.
 
-4.  **Inicializar Dados (Opcional, mas Recomendado):**
-    Para popular o banco de dados com dados simulados e gerar alertas iniciais, execute os scripts dentro do contêiner do backend:
+4.  **Initialize Data (Optional, but Recommended):**
+    To populate the database with simulated data and generate initial alerts, execute the scripts inside the backend container:
     ```bash
     docker-compose exec backend python -c "from backend.database import init_db; init_db()"
     docker-compose exec backend python backend/data_simulator.py
     docker-compose exec backend python backend/alert_engine.py --run-once
     ```
-    O `alert_engine.py` pode ser configurado como um cron job no ambiente de produção, mas para o protótipo, executamos manualmente para popular.
+    The `alert_engine.py` can be set up as a cron job in a production environment, but for the prototype, we run it manually to populate data.
 
-5.  **Acessar a Aplicação:**
-    Abra seu navegador e vá para `http://localhost:5173` (ou a porta que o Vite usar, verificável nos logs do Docker).
+5.  **Access the Application:**
+    Open your browser and navigate to `http://localhost:5173` (or the port Vite uses, which can be checked in Docker logs).
 
-## Endpoints da API (Backend FastAPI)
+## API Endpoints (FastAPI Backend)
 
-A API do backend está disponível em `http://localhost:8000`.
+The backend API is available at `http://localhost:8000`.
 
 *   **GET /api/tiles?bbox=[min_lon,min_lat,max_lon,max_lat]&zoom=[zoom_level]**
-    *   Retorna uma lista de tiles com `risk_score` e metadados dentro da bounding box e nível de zoom especificados.
-    *   Exemplo de payload de retorno:
+    *   Returns a list of tiles with `risk_score` and metadata within the specified bounding box and zoom level.
+    *   Example return payload:
         ```json
         [
           {
@@ -91,14 +91,14 @@ A API do backend está disponível em `http://localhost:8000`.
             "risk_score": 75,
             "type": "flood",
             "timestamp": "2023-10-27T10:00:00Z",
-            "popup_info": "Risco Alto: Enchente na região central. Chuva 24h: 60mm."
+            "popup_info": "High Risk: Flood in the central region. 24h Rain: 60mm."
           }
         ]
         ```
 
 *   **GET /api/alerts/active**
-    *   Retorna uma lista de alertas ativos no sistema.
-    *   Exemplo de payload de retorno (detalhes no `alert_payload_examples.json`):
+    *   Returns a list of active alerts in the system.
+    *   Example return payload (details in `alert_payload_examples.json`):
         ```json
         [
           {
@@ -111,9 +111,9 @@ A API do backend está disponível em `http://localhost:8000`.
             "created_at": "2025-10-05T14:30:00Z",
             "location_info": {
               "city": "São Paulo",
-              "tile_description": "Zona Norte"
+              "tile_description": "North Zone"
             },
-            "recommendations": ["Evacuar áreas ribeirinhas", "Evitar subsolos"],
+            "recommendations": ["Evacuate riverside areas", "Avoid basements"],
             "evidence": {
               "rain_24h": 62,
               "soil_moisture": 86,
@@ -122,7 +122,7 @@ A API do backend está disponível em `http://localhost:8000`.
                 "rain_48h": [
                   { "hour": "-48h", "value": 10 },
                   { "hour": "-24h", "value": 20 },
-                  { "hour": "agora", "value": 62 }
+                  { "hour": "now", "value": 62 }
                 ]
               }
             }
@@ -131,20 +131,20 @@ A API do backend está disponível em `http://localhost:8000`.
         ```
 
 *   **POST /api/ingest/nasa-data?start=...&end=...&product=gpm**
-    *   **Demonstração de Integração Real com NASA**: Este endpoint simula a chamada a uma API real da NASA para buscar dados de observação da Terra.
-    *   **Autenticação**: Usa variáveis de ambiente `NASA_EARTHDATA_USERNAME` e `NASA_EARTHDATA_PASSWORD` para simular a autenticação.
-    *   **Parâmetros**: `start` (ISO format date-time), `end` (ISO format date-time), `product` (gpm, modis, smap, srtm - para simular diferentes endpoints).
-    *   Para o protótipo, a resposta ainda é um dado simulado, mas a estrutura da requisição para a NASA é realística.
-    *   Exemplo de curl:
+    *   **Real NASA Integration Demonstration**: This endpoint simulates calling a real NASA API to fetch Earth observation data.
+    *   **Authentication**: Uses `NASA_EARTHDATA_USERNAME` and `NASA_EARTHDATA_PASSWORD` environment variables to simulate authentication.
+    *   **Parameters**: `start` (ISO format date-time), `end` (ISO format date-time), `product` (gpm, modis, smap, srtm - to simulate different endpoints).
+    *   For the prototype, the response is still simulated data, but the request structure for NASA is realistic.
+    *   Example curl:
         ```bash
-        curl -X POST "http://localhost:8000/api/ingest/nasa-data?start=2023-10-26T00:00:00Z&end=2023-10-27T00:00:00Z&product=gpm" -H "Authorization: Basic $(echo -n 'SEU_USUARIO_EARTHDATA:SUA_SENHA_EARTHDATA' | base64)"
+        curl -X POST "http://localhost:8000/api/ingest/nasa-data?start=2023-10-26T00:00:00Z&end=2023-10-27T00:00:00Z&product=gpm" -H "Authorization: Basic $(echo -n 'YOUR_EARTHDATA_USERNAME:YOUR_EARTHDATA_PASSWORD' | base64)"
         ```
-    *   Retorna: `{"message": "Dados da NASA (simulados para o protótipo) processados para: gpm", "data": {...}}`
+    *   Returns: `{"message": "NASA data (simulated for prototype) processed for: gpm", "data": {...}}`
 
 *   **POST /api/ingest/crowd-report**
-    *   Aceita relatórios de usuários (simulados).
-    *   Método: `POST`
-    *   Payload JSON:
+    *   Accepts crowd-sourced reports (simulated).
+    *   Method: `POST`
+    *   JSON Payload:
         ```json
         {
           "user_id": "user123",
@@ -152,28 +152,28 @@ A API do backend está disponível em `http://localhost:8000`.
           "lon": -46.6333,
           "type": "flood",
           "photo_url": "http://example.com/photo.jpg",
-          "description": "Rua alagada perto da estação."
+          "description": "Street flooded near the station."
         }
         ```
-    *   Retorna: `{"message": "Relatório de campo recebido.", "report_id": "..."}`
+    *   Returns: `{"message": "Crowd report received.", "report_id": "..."}`
 
 *   **POST /api/webhook/municipality**
-    *   Endpoint para receber webhooks de resposta/confirmação de municípios.
-    *   Método: `POST`
-    *   Payload JSON (exemplo):
+    *   Endpoint to receive acknowledgment/response webhooks from municipalities.
+    *   Method: `POST`
+    *   JSON Payload (example):
         ```json
         {
           "alert_id": "A20251005-0001",
           "status": "acknowledged",
-          "message": "Defesa Civil de São Paulo ciente e em ação."
+          "message": "São Paulo Civil Defense acknowledged and taking action."
         }
         ```
-    *   Retorna: `{"message": "Webhook municipal recebido e processado."}`
+    *   Returns: `{"message": "Municipal webhook received and processed."}`
 
-## Simulação de Dados
+## Data Simulation
 
-O script `scripts/generate_synthetic_data.py` gera séries temporais sintéticas de chuva, umidade do solo e NDVI para tiles em cidades exemplo (São Paulo, Dhaka, Medellín). Estes dados são usados pelo `data_simulator.py` no backend para popular o banco de dados com `tile_features`, que o `alert_engine` processará. Esta etapa é crucial para o funcionamento do protótipo, **mesmo com a integração demonstrativa da NASA**, pois a transformação de dados brutos da NASA para o formato `tile_features` é complexa e está fora do escopo deste protótipo inicial.
+The `scripts/generate_synthetic_data.py` script generates synthetic time series data for rain, soil moisture, and NDVI for tiles in example cities (São Paulo, Dhaka, Medellín). This data is used by `data_simulator.py` in the backend to populate the database with `tile_features`, which the `alert_engine` then processes. This step is crucial for the prototype's functionality, **even with the demonstrative NASA integration**, as the transformation from raw NASA data to `tile_features` format is complex and outside the scope of this initial prototype.
 
-Para gerar os dados sintéticos:
+To generate synthetic data:
 ```bash
 python scripts/generate_synthetic_data.py
